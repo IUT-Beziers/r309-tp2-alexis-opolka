@@ -42,9 +42,7 @@ class NetApp(Tk):
         self.reverse_equipments = {}
 
         self.mainframe = Frame(self, height=self.x_size, width=self.y_size)
-        self.playground = Canvas(
-            self.mainframe, bg="white", width=self.x_size, height=self.y_size
-        )
+        self.playground = Canvas(self.mainframe, bg="white", width=self.x_size, height=self.y_size)
         self.focused_tag = 0
 
         ### Let's define the menus
@@ -60,9 +58,7 @@ class NetApp(Tk):
 
         ### Let's set the display
         self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.playground.grid(
-            column=1, row=1, rowspan=self.y_size, columnspan=self.x_size
-        )
+        self.playground.grid(column=1, row=1, rowspan=self.y_size, columnspan=self.x_size)
 
         ### Bind some basics events to the root window
         self.bind("<Motion>", lambda event: self.__getMouseCoords(event))
@@ -76,9 +72,7 @@ class NetApp(Tk):
         self.rightclick_menu.add_command(label="Change Icon", command=lambda: self.handleChangeOfEquipmentIcon())
         self.rightclick_menu.add_command(label="Create Link", command=lambda: self.handleLinkCreation())
 
-    def __createNewMenu(
-        self, title: str, return_title: bool = True
-    ) -> Union[Union[str, Menu], Menu]:
+    def __createNewMenu(self, title: str, return_title: bool = True) -> Union[Union[str, Menu], Menu]:
         """A private method to create a new menu and configure it internally.
 
         Args:
@@ -104,13 +98,7 @@ class NetApp(Tk):
         else:
             return (title, new_menu)
 
-    def __createNewCommand(
-        self,
-        parent_menu: Union[str, Menu],
-        title: str,
-        command: Callable,
-        return_title: bool = False,
-    ) -> Union[None, str]:
+    def __createNewCommand(self, parent_menu: Union[str, Menu], title: str, command: Callable, return_title: bool = False) -> Union[None, str]:
         """A private method to create a New Command inside a parent menu and configure it internally.
 
         Args:
@@ -146,18 +134,10 @@ class NetApp(Tk):
 
         ### Edit Menu
         edit_menu = self.__createNewMenu("Edit")
-        self.__createNewCommand(
-            edit_menu, "Insert Switch", lambda: self.add_equipment("switch")
-        )
-        self.__createNewCommand(
-            edit_menu, "Insert Router", lambda: self.add_equipment("router")
-        )
-        self.__createNewCommand(
-            edit_menu, "Insert Laptop", lambda: self.add_equipment("pc")
-        )
-        self.__createNewCommand(
-            edit_menu, "Insert Mobile", lambda: self.add_equipment("mobile")
-        )
+        self.__createNewCommand(edit_menu, "Insert Switch", lambda: self.add_equipment("switch"))
+        self.__createNewCommand(edit_menu, "Insert Router", lambda: self.add_equipment("router"))
+        self.__createNewCommand(edit_menu, "Insert Laptop", lambda: self.add_equipment("pc"))
+        self.__createNewCommand(edit_menu, "Insert Mobile", lambda: self.add_equipment("mobile"))
 
     def __configureEquipment(self, equipment_tag: int) -> None:
         """A private method to configure the equipment with the given tag.
@@ -169,35 +149,19 @@ class NetApp(Tk):
         self.equipments[self.equipment_nbr]["bindings"].update(
             {
                 "left-click": {
-                    "id": self.playground.tag_bind(
-                        equipment_tag,
-                        "<Button-1>",
-                        lambda event: self.startDragFocus(event),
-                    ),
+                    "id": self.playground.tag_bind(equipment_tag, "<Button-1>", lambda event: self.startDragFocus(event)),
                     "command": self.startDragFocus,
                 },
                 "left-click-motion": {
-                    "id": self.playground.tag_bind(
-                        equipment_tag,
-                        "<B1-Motion>",
-                        lambda event: self.endDragFocus(event),
-                    ),
+                    "id": self.playground.tag_bind(equipment_tag, "<B1-Motion>", lambda event: self.endDragFocus(event)),
                     "command": self.endDragFocus,
                 },
                 "double-left-click": {
-                    "id": self.playground.tag_bind(
-                        equipment_tag,
-                        "<Double-Button-1>",
-                        lambda event: self.deleteItem(event),
-                    ),
+                    "id": self.playground.tag_bind(equipment_tag, "<Double-Button-1>", lambda event: self.deleteItem(event)),
                     "command": self.deleteItem,
                 },
                 "right-click": {
-                    "id": self.playground.tag_bind(
-                        equipment_tag,
-                        "<Button-3>",
-                        lambda event: self.popRightClickMenu(event),
-                    ),
+                    "id": self.playground.tag_bind(equipment_tag, "<Button-3>", lambda event: self.popRightClickMenu(event)),
                     "command": self.popRightClickMenu,
                 },
             }
