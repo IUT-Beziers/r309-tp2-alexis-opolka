@@ -9,18 +9,18 @@ from tkinter import (
     StringVar,
     filedialog as TkFileDialog
 )
-from typing import Union, Callable
+from typing import Union, Callable, Tuple
 from PIL import ImageTk, Image
 
 
 class NetApp(Tk):
-    def __init__(self, name: str, base_size: Union[int, int], title: str = ""):
+    def __init__(self, name: str, base_size: Tuple[int, int], title: str = ""):
         """Create a Specific App for the Networks and Telecommunications
         using tkinter.
 
         Args:
             name (str): The displayed name of the app
-            base_size (Union[int, int]): The default size of the window
+            base_size (Tuple[int, int]): The default size of the window
             title (str, optional): The title of the window. Defaults to `name`.
 
         """
@@ -71,8 +71,9 @@ class NetApp(Tk):
         self.rightclick_menu.add_command(label="Change Name", command=lambda: self.handleChangeOfEquipmentName())
         self.rightclick_menu.add_command(label="Change Icon", command=lambda: self.handleChangeOfEquipmentIcon())
         self.rightclick_menu.add_command(label="Create Link", command=lambda: self.handleLinkCreation())
+        self.rightclick_menu.add_command(label="Link to this equipment", command= lambda: self.handleLinkDefinition(), state="disabled")
 
-    def __createNewMenu(self, title: str, return_title: bool = True) -> Union[Union[str, Menu], Menu]:
+    def __createNewMenu(self, title: str, return_title: bool = True) -> Union[Tuple[str, Menu], Menu]:
         """A private method to create a new menu and configure it internally.
 
         Args:
@@ -80,7 +81,7 @@ class NetApp(Tk):
             return_title (bool, optional): Specifies if you want to return the title. Defaults to True.
 
         Returns:
-            Union[Union[str, Menu], Menu]: Returns either (title, Menu_Object) or Menu_Object
+            Union[Tuple[str, Menu], Menu]: Returns either (title, Menu_Object) or Menu_Object
         """
         new_menu = Menu(self.master_menu, tearoff=0)
 
@@ -98,11 +99,11 @@ class NetApp(Tk):
         else:
             return (title, new_menu)
 
-    def __createNewCommand(self, parent_menu: Union[str, Menu], title: str, command: Callable, return_title: bool = False) -> Union[None, str]:
+    def __createNewCommand(self, parent_menu: Tuple[str, Menu], title: str, command: Callable, return_title: bool = False) -> Union[None, str]:
         """A private method to create a New Command inside a parent menu and configure it internally.
 
         Args:
-            parent_menu (Union[str, Menu]): The parent menu of the command (i.e. where you want the command to appear).
+            parent_menu (Tuple[str, Menu]): The parent menu of the command (i.e. where you want the command to appear).
             title (str): The name of the command.
             command (Callable): The callable function
             return_title (bool, optional): `True` if you want this method to return the title. Defaults to False.
@@ -218,7 +219,7 @@ class NetApp(Tk):
                     "item": new_equipment,
                     "canvas_id": canvas_tag,
                     "bindings": {},
-                    "dependencies": {"label": equipment_label, "links": []},
+                    "dependencies": {"label": equipment_label, "links": {}},
                 }
             }
         )
@@ -291,8 +292,6 @@ class NetApp(Tk):
 
             self.setEquipmentName(self.playground.find_closest(x, y)[0], self.popup_entry_var)
 
-        
-
     def handleChangeOfEquipmentIcon(self):
         ### The user shouldn't have changed of active tag between
         ### the <KeyRelease> event and the call of this function
@@ -310,6 +309,17 @@ class NetApp(Tk):
 
             self.setEquipmentIcon(self.playground.find_closest(x, y)[0], icon_path)
 
+    def handleLinkCreation(self):
+        ### The user shouldn't have changed of active tag between
+        ### the <KeyRelease> event and the call of this function
+        ### so we should be able to safely use `self.focused_tag`.
+
+        if self.focused_tag != 0:
+            self.setEquipmentsLink(self.focused_tag)
+        else:
+            x, y = self.mouse_coords
+            self.setEquipmentsLink(self.playground.find_closest(x, y)[0])
+
     ### Setters
     def setEquipmentName(self, equipment_tag: int, name: str ):
         equipment_holder = self.reverse_equipments[equipment_tag]
@@ -326,6 +336,20 @@ class NetApp(Tk):
         equipment_object.setIcon(new_icon)
 
         self.playground.itemconfigure(equipment_tag, image=equipment_object.icon)
+
+    def setEquipmentsLink(self, equipment_tag: int):
+        equipment_holder = self.equipments[self.reverse_equipments[equipment_tag]]
+        _object: NetworkEquipment = equipment_holder["item"]
+        links = equipment_holder["dependencies"]["links"]
+        links.update({
+            _object.getLinksNumber(): {
+                "id": "",
+                "coords": (self.mouse_coords, (0, 0))
+            }
+        })
+
+        self.rightclick_menu.insert_command(-1, "Create link", command=print("yes!"))
+
 
     ### Export area
     def export_png(self):
@@ -374,21 +398,22 @@ class NetworkEquipment:
             ValueError: You gave an unsupported type.
         """
 
-        if type.lower() in NetworkEquipment.supported_equipments:
-            self.equipment = type
-            self.icon_path = f"./src/icons/{self.equipment}.png"
-            self.icon = ImageTk.PhotoImage(
-                Image.open(self.icon_path, "r").resize(NetworkEquipment.icon_size)
-            )
-
-            ### We update its ID
-            NetworkEquipment.ids[self.equipment] += 1
-
-            self.name = f"{self.equipment}-{NetworkEquipment.ids[self.equipment]}"
-
-        else:
+        if type.lower() not in NetworkEquipment.supported_equipments:
             raise ValueError("Unsupported Network Equipment")
+        
+        self.equipment = type
+        self.icon_path = f"./src/icons/{self.equipment}.png"
+        self.icon = ImageTk.PhotoImage(
+            Image.open(self.icon_path, "r").resize(NetworkEquipment.icon_size)
+        )
 
+        ### We update its ID
+        NetworkEquipment.ids[self.equipment] += 1
+
+        self.name = f"{self.equipment}-{NetworkEquipment.ids[self.equipment]}"
+        self.links_nbr = 0
+
+    ### Setters
     def setName(self, new_name: str):
         self.name = new_name
 
@@ -396,6 +421,11 @@ class NetworkEquipment:
         self.icon_path = new_icon
         self.icon = ImageTk.PhotoImage(Image.open(self.icon_path, "r").resize(NetworkEquipment.icon_size))
 
+    ### Getters
+    def getLinksNumber(self):
+        self.links_nbr += 1
+        return self.links_nbr
+                                                                                                                                                            
 
 t = NetApp("test-app", (800, 800))
 t.run()
